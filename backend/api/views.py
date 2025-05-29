@@ -31,10 +31,11 @@ from .pagination import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly, IsCurrentUser
 from .serializers import (
     AvatarSerializer,
-    RecipePreviewSerializer,
     IngredientSerializer,
+    RecipeMinifiedSerializer,
     RecipeSerializer,
     UserSerializer,
+    UserWithRecipesSerializer
 )
 
 
@@ -51,8 +52,10 @@ class UserViewSet(BaseUserViewSet):
             try:
                 subscription = Subscription.objects.create(
                     user=request.user, subscribed_to=subscribe_to)
-                return Response(UserSerializer(subscription.subscribed_to).data,
-                                status=status.HTTP_201_CREATED)
+                return Response(
+                    UserWithRecipesSerializer(subscription.subscribed_to).data,
+                    status=status.HTTP_201_CREATED
+                )
             except IntegrityError:
                 raise AlreadySubscribed()
         else:
@@ -134,7 +137,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             try:
                 favorite = Favorite.objects.create(user=request.user,
                                                    recipe=recipe)
-                return Response(RecipePreviewSerializer(favorite.recipe).data,
+                return Response(RecipeMinifiedSerializer(favorite.recipe).data,
                                 status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadyFavorited()
@@ -157,7 +160,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             try:
                 cart = ShoppingCart.objects.create(user=request.user,
                                                    recipe=recipe)
-                return Response(RecipePreviewSerializer(cart.recipe).data,
+                return Response(RecipeMinifiedSerializer(cart.recipe).data,
                                 status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadyInShoppingCart()

@@ -145,7 +145,18 @@ class RecipeSerializer(serializers.ModelSerializer):
         return instance
 
 
-class RecipePreviewSerializer(serializers.ModelSerializer):
+class RecipeMinifiedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class UserWithRecipesSerializer(UserSerializer):
+    recipes = RecipeMinifiedSerializer(many=True)
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def get_recipes_count(self, obj: User):
+        return obj.recipes.count()
