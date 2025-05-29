@@ -51,7 +51,8 @@ class UserViewSet(BaseUserViewSet):
             try:
                 subscription = Subscription.objects.create(
                     user=request.user, subscribed_to=subscribe_to)
-                return Response(UserSerializer(subscription.subscribed_to).data)
+                return Response(UserSerializer(subscription.subscribed_to).data,
+                                status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadySubscribed()
         else:
@@ -133,7 +134,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             try:
                 favorite = Favorite.objects.create(user=request.user,
                                                    recipe=recipe)
-                return Response(RecipePreviewSerializer(favorite.recipe).data)
+                return Response(RecipePreviewSerializer(favorite.recipe).data,
+                                status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadyFavorited()
         else:
