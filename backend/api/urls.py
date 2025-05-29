@@ -1,7 +1,12 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .views import CurrentUserViewSet, SubscriptionViewSet, UserViewSet
+from .views import (
+    CurrentUserViewSet,
+    IngredientViewSet,
+    SubscriptionViewSet,
+    UserViewSet,
+)
 
 
 router = routers.DefaultRouter()
@@ -12,6 +17,7 @@ router.register(
 )
 router.register('users', UserViewSet)
 router.register('users/me', CurrentUserViewSet, basename='current-user')
+router.register('ingredients', IngredientViewSet)
 
 urlpatterns = [
     # path('', include('djoser.urls')),

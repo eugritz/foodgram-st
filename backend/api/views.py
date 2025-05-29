@@ -2,15 +2,15 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet as BaseUserViewSet
-from rest_framework import mixins, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from foodgram.models import Subscription, User
+from foodgram.models import Ingredient, Subscription, User
 
 from .exceptions import AlreadySubscribed, NotSubscribed
 from .pagination import PageLimitPagination
-from .serializers import AvatarSerializer, UserSerializer
+from .serializers import AvatarSerializer, IngredientSerializer, UserSerializer
 
 
 class UserViewSet(BaseUserViewSet):
@@ -71,3 +71,14 @@ class SubscriptionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def get_queryset(self):
         return [x.subscribed_to for x in
                 self.request.user.subscriptions.select_related('subscribed_to')]
+
+
+class NameSearchFilter(filters.SearchFilter):
+    search_param = 'name'
+
+
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    filter_backends = [NameSearchFilter]
+    search_fields = ['name']

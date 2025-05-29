@@ -7,7 +7,7 @@ from rest_framework import serializers
 import base64
 import uuid
 
-from foodgram.models import User
+from foodgram.models import Ingredient, User
 
 
 class UserCreateSerializer(BaseUserCreateSerializer):
@@ -54,3 +54,9 @@ class AvatarSerializer(serializers.Serializer):
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
         return instance
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = '__all__'
