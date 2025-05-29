@@ -7,7 +7,7 @@ from rest_framework import serializers
 import base64
 import uuid
 
-from foodgram.models import Ingredient, User
+from foodgram.models import Ingredient, Recipe, RecipeIngredient, User
 
 
 class UserCreateSerializer(BaseUserCreateSerializer):
@@ -60,3 +60,66 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
+
+
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+        source='ingredient',
+    )
+    name = serializers.SerializerMethodField()
+    measurement_unit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+
+    def get_name(self, obj):
+        return obj.ingredient.name
+    
+    def get_measurement_unit(self, obj):
+        return obj.ingredient.measurement_unit
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    author = UserSerializer(
+        read_only=True,
+        default=serializers.CurrentUserDefault(),
+    )
+    image = Base64ImageField()
+    ingredients = RecipeIngredientSerializer(many=True)
+
+    class Meta:
+        model = Recipe
+        fields = '__all__'
+
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(**validated_data)
+        for ingredient_data in ingredients_data:
+            RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
+        return recipe
+    
+    def update(self, instance, validated_data):
+        ingredients_data = validated_data.pop('ingredients')
+        new_ingredients_dict = {x['ingredient'].id: x for x in ingredients_data}
+        old_ingredients_dict = {x.ingredient.id: x
+                                for x in instance.ingredients.all()}
+
+        # Найдем ингредиенты которые требуется удалить, т.е. которых нет в новом
+        # списке
+        delete_ids = set(old_ingredients_dict.keys()).difference(
+            set(new_ingredients_dict.keys()))
+
+        # Удалим старые ингредиенты
+        for delete_id in delete_ids:
+            old_ingredients_dict[delete_id].delete()
+
+        # Добавим новые, либо обновим старые
+        for ingredient_data in new_ingredients_dict.values():
+            RecipeIngredient.objects.update_or_create(
+                recipe=instance,
+                ingredient=ingredient_data['ingredient'],
+                defaults=ingredient_data)
+            
+        return instance

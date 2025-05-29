@@ -4,13 +4,19 @@ from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet as BaseUserViewSet
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from foodgram.models import Ingredient, Subscription, User
+from foodgram.models import Ingredient, Recipe, Subscription, User
 
 from .exceptions import AlreadySubscribed, NotSubscribed
 from .pagination import PageLimitPagination
-from .serializers import AvatarSerializer, IngredientSerializer, UserSerializer
+from .serializers import (
+    AvatarSerializer,
+    IngredientSerializer,
+    RecipeSerializer,
+    UserSerializer,
+)
 
 
 class UserViewSet(BaseUserViewSet):
@@ -82,3 +88,13 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     filter_backends = [NameSearchFilter]
     search_fields = ['^name']
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    pagination_class = PageLimitPagination
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
