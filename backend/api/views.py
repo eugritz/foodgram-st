@@ -10,13 +10,19 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
-from foodgram.models import Ingredient, Recipe, Subscription, User
+from foodgram.models import Favorite, Ingredient, Recipe, Subscription, User
 
-from .exceptions import AlreadySubscribed, NotSubscribed
+from .exceptions import (
+    AlreadyFavorited,
+    AlreadySubscribed,
+    NotFavorited,
+    NotSubscribed,
+)
 from .pagination import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly, IsCurrentUser
 from .serializers import (
     AvatarSerializer,
+    FavoritedRecipeSerializer,
     IngredientSerializer,
     RecipeSerializer,
     UserSerializer,
@@ -33,13 +39,12 @@ class UserViewSet(BaseUserViewSet):
         subscribe_to = get_object_or_404(User, pk=id)
 
         if request.method == 'POST':
-            subscription = Subscription(user=request.user,
-                                        subscribed_to=subscribe_to)
             try:
-                subscription.save()
+                subscription = Subscription.objects.create(
+                    user=request.user, subscribed_to=subscribe_to)
+                return Response(UserSerializer(subscription.subscribed_to).data)
             except IntegrityError:
                 raise AlreadySubscribed()
-            return Response(UserSerializer(subscription.subscribed_to).data)
         else:
             subscription = Subscription.objects.filter(
                 user=request.user, subscribed_to=subscribe_to).first()
@@ -108,3 +113,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    @action(['post', 'delete'],
+            detail=True,
+            permission_classes=[IsAuthenticated])
+    def favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+
+        if request.method == 'POST':
+            try:
+                favorite = Favorite.objects.create(user=request.user,
+                                                   recipe=recipe)
+                return Response(FavoritedRecipeSerializer(favorite.recipe).data)
+            except IntegrityError:
+                raise AlreadyFavorited()
+        else:
+            favorite = Favorite.objects.filter(user=request.user,
+                                               recipe=recipe).first()
+            if favorite:
+                favorite.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                raise NotFavorited()

@@ -88,10 +88,20 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
     ingredients = RecipeIngredientSerializer(many=True)
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = '__all__'
+
+    def get_is_favorited(self, obj: Recipe):
+        user = None
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            user = request.user
+        if isinstance(user, User):
+            return user.favorites.filter(recipe=obj).exists()
+        return False
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
@@ -123,3 +133,9 @@ class RecipeSerializer(serializers.ModelSerializer):
                 defaults=ingredient_data)
             
         return instance
+
+
+class FavoritedRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
