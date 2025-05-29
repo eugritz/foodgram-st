@@ -7,6 +7,8 @@ from rest_framework import serializers
 import base64
 import uuid
 
+from foodgram.models import User
+
 
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
@@ -17,8 +19,19 @@ class UserCreateSerializer(BaseUserCreateSerializer):
 
 
 class UserSerializer(BaseUserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
     class Meta(BaseUserSerializer.Meta):
-        fields = BaseUserSerializer.Meta.fields + ('avatar',)
+        fields = BaseUserSerializer.Meta.fields + ('avatar', 'is_subscribed')
+
+    def get_is_subscribed(self, obj: User):
+        user = None
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            user = request.user
+        if isinstance(user, User):
+            return user.subscriptions.filter(subscribed_to=obj).exists()
+        return False
 
 
 class Base64ImageField(serializers.ImageField):
