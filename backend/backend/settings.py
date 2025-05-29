@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'djoser',
     'api.apps.ApiConfig',
     'foodgram.apps.FoodgramConfig',
+    'import_export',
 ]
 
 MIDDLEWARE = [
