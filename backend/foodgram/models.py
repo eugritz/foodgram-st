@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db import models
+import random
+import string
 
 
 class User(AbstractUser):
@@ -93,3 +95,12 @@ class ShoppingCart(models.Model):
 
     class Meta:
         unique_together = ['user', 'recipe']
+
+
+def random_id():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=3))
+
+
+class ShortLink(models.Model):
+    short_link = models.TextField(primary_key=True, default=random_id)
+    destination = models.TextField(unique=True)
