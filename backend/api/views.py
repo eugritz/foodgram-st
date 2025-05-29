@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.db import IntegrityError
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet as BaseUserViewSet
@@ -9,12 +11,14 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from foodgram.models import (
     Favorite,
     Ingredient,
     Recipe,
     ShoppingCart,
+    ShortLink,
     Subscription,
     User,
 )
@@ -34,8 +38,9 @@ from .serializers import (
     IngredientSerializer,
     RecipeMinifiedSerializer,
     RecipeSerializer,
+    ShortLinkSerializer,
     UserSerializer,
-    UserWithRecipesSerializer
+    UserWithRecipesSerializer,
 )
 
 
@@ -172,3 +177,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 raise NotInShoppingCart()
+    
+    @action(detail=True, url_path='get-link')
+    def get_link(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        short_link = ShortLink.objects.update_or_create(
+            destination=f'/recipes/{pk}')
+        return Response(ShortLinkSerializer(short_link).data)
+
+
+class ShortLinkRedirect(APIView):
+    def get(self, request, id=None):
+        short_link = get_object_or_404(ShortLink, pk=id)
+        return HttpResponseRedirect(redirect_to='https://foodgram.example.org' + short_link.destination)

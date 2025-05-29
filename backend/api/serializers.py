@@ -1,4 +1,5 @@
 from django.core.files.base import ContentFile
+from django.urls import reverse
 from djoser.serializers import (
     UserCreateSerializer as BaseUserCreateSerializer,
     UserSerializer as BaseUserSerializer,
@@ -7,7 +8,13 @@ from rest_framework import serializers
 import base64
 import uuid
 
-from foodgram.models import Ingredient, Recipe, RecipeIngredient, User
+from foodgram.models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShortLink,
+    User,
+)
 
 
 class UserCreateSerializer(BaseUserCreateSerializer):
@@ -160,3 +167,15 @@ class UserWithRecipesSerializer(UserSerializer):
 
     def get_recipes_count(self, obj: User):
         return obj.recipes.count()
+
+
+class ShortLinkSerializer(serializers.ModelSerializer):
+    short_link = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ShortLink
+        fields = ('short_link',)
+
+    def get_short_link(self, obj: ShortLink):
+        short_link = obj[0].short_link
+        return reverse('short-link-redirect', args=(short_link,))
