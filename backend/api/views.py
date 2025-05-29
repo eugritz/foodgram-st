@@ -4,13 +4,17 @@ from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet as BaseUserViewSet
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 
 from foodgram.models import Ingredient, Recipe, Subscription, User
 
 from .exceptions import AlreadySubscribed, NotSubscribed
 from .pagination import PageLimitPagination
+from .permissions import IsAuthorOrReadOnly, IsCurrentUser
 from .serializers import (
     AvatarSerializer,
     IngredientSerializer,
@@ -47,7 +51,7 @@ class UserViewSet(BaseUserViewSet):
 
 
 class CurrentUserViewSet(viewsets.ViewSet):
-    permission_classes = (CurrentUserOrAdmin,)
+    permission_classes = (IsAuthenticated,)
 
     @action(['put', 'delete'], detail=False)
     def avatar(self, request):
@@ -71,7 +75,7 @@ class CurrentUserViewSet(viewsets.ViewSet):
 
 class SubscriptionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     pagination_class = PageLimitPagination
-    permission_classes = (CurrentUserOrAdmin,)
+    permission_classes = (IsCurrentUser,)
     serializer_class = UserSerializer
 
     def get_queryset(self):
@@ -94,7 +98,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = PageLimitPagination
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get_permissions(self):
+        if self.action in ('update', 'partial_update', 'destroy'):
+            self.permission_classes = (IsAuthorOrReadOnly,)
+        else:
+            self.permission_classes = (IsAuthenticatedOrReadOnly,)
+        return super().get_permissions()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
