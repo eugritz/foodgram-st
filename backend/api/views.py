@@ -10,19 +10,28 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
-from foodgram.models import Favorite, Ingredient, Recipe, Subscription, User
+from foodgram.models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    ShoppingCart,
+    Subscription,
+    User,
+)
 
 from .exceptions import (
     AlreadyFavorited,
+    AlreadyInShoppingCart,
     AlreadySubscribed,
     NotFavorited,
+    NotInShoppingCart,
     NotSubscribed,
 )
 from .pagination import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly, IsCurrentUser
 from .serializers import (
     AvatarSerializer,
-    FavoritedRecipeSerializer,
+    RecipePreviewSerializer,
     IngredientSerializer,
     RecipeSerializer,
     UserSerializer,
@@ -124,7 +133,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             try:
                 favorite = Favorite.objects.create(user=request.user,
                                                    recipe=recipe)
-                return Response(FavoritedRecipeSerializer(favorite.recipe).data)
+                return Response(RecipePreviewSerializer(favorite.recipe).data)
             except IntegrityError:
                 raise AlreadyFavorited()
         else:
@@ -135,3 +144,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 raise NotFavorited()
+
+    @action(['post', 'delete'],
+            detail=True,
+            permission_classes=[IsAuthenticated])
+    def shopping_cart(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+
+        if request.method == 'POST':
+            try:
+                cart = ShoppingCart.objects.create(user=request.user,
+                                                   recipe=recipe)
+                return Response(RecipePreviewSerializer(cart.recipe).data,
+                                status=status.HTTP_201_CREATED)
+            except IntegrityError:
+                raise AlreadyInShoppingCart()
+        else:
+            cart = ShoppingCart.objects.filter(user=request.user,
+                                               recipe=recipe).first()
+            if cart:
+                cart.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                raise NotInShoppingCart()

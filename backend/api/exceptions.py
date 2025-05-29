@@ -23,3 +23,15 @@ class NotFavorited(APIException):
     status_code = 400
     default_detail = 'You haven\'t favorited this recipe.'
     default_code = 'not_favorited'
+
+
+class AlreadyInShoppingCart(APIException):
+    status_code = 400
+    default_detail = 'You have already added this recipe to your cart.'
+    default_code = 'already_in_cart'
+
+
+class NotInShoppingCart(APIException):
+    status_code = 400
+    default_detail = 'You haven\'t added this recipe to your cart.'
+    default_code = 'not_in_cart'
