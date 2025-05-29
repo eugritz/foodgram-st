@@ -33,3 +33,8 @@ class Subscription(models.Model):
     def clean(self):
         if self.user == self.subscribed_to:
             raise ValidationError('user must not be equal to subscribed_to')
+
+
+class Ingredient(models.Model):
+    name = models.TextField(max_length=128)
+    measurement_unit = models.TextField(max_length=64)
