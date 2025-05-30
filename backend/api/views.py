@@ -1,6 +1,6 @@
 from django.db import IntegrityError
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet as BaseUserViewSet
@@ -42,6 +42,7 @@ from .serializers import (
     UserSerializer,
     UserWithRecipesSerializer,
 )
+from .shopping_cart_generator import ShoppingCartGenerator
 
 
 class UserViewSet(BaseUserViewSet):
@@ -211,7 +212,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 raise NotInShoppingCart()
-    
+
+    @action(detail=False, permission_classes=[IsAuthenticated])
+    def download_shopping_cart(self, request):
+        cart = ShoppingCart.objects.filter(user=request.user) \
+            .select_related('recipe') \
+            .prefetch_related('recipe__ingredients__ingredient')
+
+        recipes = [x.recipe for x in cart]
+        gen = ShoppingCartGenerator(recipes)
+        return HttpResponse(
+            str(gen),
+            content_type='text/plain',
+            headers={
+                'Content-Disposition': 'attachment;'
+                'filename="shopping_cart.txt"',
+            },
+        )
+
     @action(detail=True, url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
