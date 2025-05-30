@@ -47,6 +47,12 @@ from .shopping_cart_generator import ShoppingCartGenerator
 
 class UserViewSet(BaseUserViewSet):
     pagination_class = PageLimitPagination
+
+    def get_permissions(self):
+        # В настройках PERMISSIONS Djoser нет current_user
+        if self.action == 'me':
+            self.permission_classes = (CurrentUserOrAdmin,)
+        return super().get_permissions()
     
     @action(['post', 'delete'],
             detail=True,
