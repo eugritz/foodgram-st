@@ -117,7 +117,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user'):
             user = request.user
         if isinstance(user, User):
-            return user.cart_recipes.filter(recipe=obj).exists()
+            return user.user_carts.filter(recipe=obj).exists()
         return False
 
     def create(self, validated_data):

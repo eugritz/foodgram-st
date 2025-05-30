@@ -1,5 +1,5 @@
-from django.conf import settings
 from django.db import IntegrityError
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from djoser.permissions import CurrentUserOrAdmin
@@ -121,6 +121,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = PageLimitPagination
+
+    def get_queryset(self):
+        query = super().get_queryset()
+
+        #
+        # NOTE: DjangoFilterBackend не работает с вычисляемыми полями, поэтому
+        # фильтрацию надо делать вручную
+        #
+
+        is_favorited = self.request.query_params.get('is_favorited', '')
+        if is_favorited == '1':
+            query = query.filter(favorited__user=self.request.user)
+        elif is_favorited == '0':
+            query = query.filter(~Q(favorited__user=self.request.user))
+        elif is_favorited != '':
+            return []
+        
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart', '')
+        if is_in_shopping_cart == '1':
+            query = query.filter(recipe_carts__user=self.request.user)
+        elif is_in_shopping_cart == '0':
+            query = query.filter(~Q(recipe_carts__user=self.request.user))
+        elif is_in_shopping_cart != '':
+            return []
+        
+        author = self.request.query_params.get('author', '')
+        try:
+            if author != '':
+                query = query.filter(author__pk=author)
+        except ValueError:
+            return []
+
+        return query
 
     def get_permissions(self):
         if self.action in ('update', 'partial_update', 'destroy'):
