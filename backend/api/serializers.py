@@ -176,6 +176,12 @@ class ShortLinkSerializer(serializers.ModelSerializer):
         model = ShortLink
         fields = ('short_link',)
 
+    @property
+    def data(self):
+        data = super().data
+        data['short-link'] = data.pop('short_link')
+        return data
+
     def get_short_link(self, obj: ShortLink):
         short_link = obj[0].short_link
         return reverse('short-link-redirect', args=(short_link,))
