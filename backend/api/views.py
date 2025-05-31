@@ -293,11 +293,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         get_object_or_404(Recipe, pk=pk)
         short_link = ShortLink.objects.update_or_create(
             destination=f'/recipes/{pk}')
-        return Response(ShortLinkSerializer(short_link).data)
+        context = self.get_serializer_context()
+        return Response(ShortLinkSerializer(short_link, context=context).data)
 
 
 class ShortLinkRedirect(APIView):
     def get(self, request, id=None):
         short_link = get_object_or_404(ShortLink, pk=id)
-        destination = urljoin(self.request.get_host(), short_link.destination)
+        base_uri = request.build_absolute_uri('/')
+        destination = urljoin(base_uri, short_link.destination)
         return HttpResponseRedirect(redirect_to=destination)

@@ -1,11 +1,10 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .views import (
+from ..views import (
     CurrentUserViewSet,
     IngredientViewSet,
     RecipeViewSet,
-    ShortLinkRedirect,
     SubscriptionViewSet,
     UserViewSet,
 )
@@ -26,5 +25,4 @@ urlpatterns = [
     # path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),
-    path('s/<id>/', ShortLinkRedirect.as_view(), name='short-link-redirect')
 ]

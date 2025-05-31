@@ -5,6 +5,7 @@ from djoser.serializers import (
     UserSerializer as BaseUserSerializer,
 )
 from rest_framework import serializers
+from urllib.parse import urljoin
 import base64
 import uuid
 
@@ -202,8 +203,12 @@ class ShortLinkSerializer(serializers.ModelSerializer):
         return data
 
     def get_short_link(self, obj: ShortLink):
+        request = self.context['request']
         short_link = obj[0].short_link
-        return reverse('short-link-redirect', args=(short_link,))
+        reversed_link = reverse('short-link-redirect', args=(short_link,))
+        base_uri = request.build_absolute_uri('/')
+        destination = urljoin(base_uri, reversed_link)
+        return destination
 
 
 class UserSubscribeQuerySerializer(serializers.Serializer):
