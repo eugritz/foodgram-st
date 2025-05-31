@@ -94,7 +94,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault(),
     )
     image = Base64ImageField()
-    ingredients = RecipeIngredientSerializer(many=True)
+    ingredients = RecipeIngredientSerializer(allow_empty=False, many=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -126,21 +126,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
         return recipe
-    
+
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         new_ingredients_dict = {x['ingredient'].id: x for x in ingredients_data}
         old_ingredients_dict = {x.ingredient.id: x
                                 for x in instance.ingredients.all()}
 
-        # Найдем ингредиенты которые требуется удалить, т.е. которых нет в новом
-        # списке
-        delete_ids = set(old_ingredients_dict.keys()).difference(
-            set(new_ingredients_dict.keys()))
-
         # Удалим старые ингредиенты
-        for delete_id in delete_ids:
-            old_ingredients_dict[delete_id].delete()
+        for id, ingredient in old_ingredients_dict.items():
+            if id not in new_ingredients_dict:
+                ingredient.delete()
 
         # Добавим новые, либо обновим старые
         for ingredient_data in new_ingredients_dict.values():
@@ -148,8 +144,20 @@ class RecipeSerializer(serializers.ModelSerializer):
                 recipe=instance,
                 ingredient=ingredient_data['ingredient'],
                 defaults=ingredient_data)
-            
+
         return instance
+
+    def validate_ingredients(self, value):
+        seen = set()
+        if any(x['ingredient'].id in seen or seen.add(x['ingredient'].id)
+               for x in value):
+            raise serializers.ValidationError(
+                'This list may not contain duplicate items.')
+        return value
+
+
+class PartialUpdateRecipeSerializer(RecipeSerializer):
+    image = Base64ImageField(required=False)
 
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):

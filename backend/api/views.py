@@ -36,6 +36,7 @@ from .permissions import IsAuthorOrReadOnly, IsCurrentUser
 from .serializers import (
     AvatarSerializer,
     IngredientSerializer,
+    PartialUpdateRecipeSerializer,
     RecipeMinifiedSerializer,
     RecipeSerializer,
     ShortLinkSerializer,
@@ -126,8 +127,20 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeSerializer # см. get_serializer_class
     pagination_class = PageLimitPagination
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head']
+
+    def partial_update(self, request, *args, **kwargs):
+        # Отключим свойство partial. Вместо этого будем вручную подбирать, какие
+        # поля должны быть необязательными
+        # kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+    def get_serializer_class(self):
+        if self.action == 'partial_update':
+            return PartialUpdateRecipeSerializer
+        return super().get_serializer_class()
 
     def get_queryset(self):
         query = super().get_queryset()
