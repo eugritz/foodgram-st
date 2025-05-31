@@ -28,7 +28,7 @@ class ShoppingCartGenerator():
 
     @lru_cache
     def __str__(self):
-        ingredients_dict = {} # type: dict[int, RecipeIngredient]
+        ingredients_dict = {}  # type: dict[int, RecipeIngredient]
 
         non_empty_recipes_count = 0
         recipes_contents_render = ''
@@ -48,14 +48,15 @@ class ShoppingCartGenerator():
 
             for ingredient in ingredients:
                 ingredient2 = RecipeIngredient(ingredient)
-                recipes_list_render += self.render_ingredient(ingredient2) + '\n'
+                recipes_list_render += \
+                    self.render_ingredient(ingredient2) + '\n'
 
                 id = ingredient.ingredient.id
                 if id in ingredients_dict:
                     ingredients_dict[id].amount += ingredient2.amount
                 else:
                     ingredients_dict[id] = ingredient2
-            
+
             recipes_list_render += '\n'
 
         ingredient_list_render = '\n'.join(map(

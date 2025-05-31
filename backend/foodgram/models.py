@@ -10,7 +10,7 @@ class User(AbstractUser):
     email = models.EmailField('email address', unique=True)
     avatar = models.ImageField(
         upload_to='users/avatars/',
-        null=True,  
+        null=True,
         default=None,
     )
 
@@ -55,7 +55,7 @@ class Recipe(models.Model):
     name = models.TextField(max_length=256)
     image = models.ImageField(
         upload_to='recipes/images/',
-        null=True,  
+        null=True,
         default=None,
     )
     text = models.TextField()

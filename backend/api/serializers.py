@@ -20,8 +20,8 @@ from foodgram.models import (
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
         extra_kwargs = {
-            'first_name': { 'required': True },
-            'last_name': { 'required': True },
+            'first_name': {'required': True},
+            'last_name': {'required': True},
         }
 
 
@@ -83,7 +83,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
     def get_name(self, obj):
         return obj.ingredient.name
-    
+
     def get_measurement_unit(self, obj):
         return obj.ingredient.measurement_unit
 
@@ -110,7 +110,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if isinstance(user, User):
             return user.favorites.filter(recipe=obj).exists()
         return False
-    
+
     def get_is_in_shopping_cart(self, obj: Recipe):
         user = None
         request = self.context.get('request')
@@ -129,7 +129,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredients')
-        new_ingredients_dict = {x['ingredient'].id: x for x in ingredients_data}
+        new_ingredients_dict = {x['ingredient'].id: x
+                                for x in ingredients_data}
         old_ingredients_dict = {x.ingredient.id: x
                                 for x in instance.ingredients.all()}
 

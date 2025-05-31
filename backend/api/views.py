@@ -12,6 +12,7 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from urllib.parse import urljoin
 
 from foodgram.models import (
     Favorite,
@@ -57,7 +58,7 @@ class UserViewSet(BaseUserViewSet):
         if self.action == 'me':
             self.permission_classes = (CurrentUserOrAdmin,)
         return super().get_permissions()
-    
+
     @action(['post', 'delete'],
             detail=True,
             permission_classes=[CurrentUserOrAdmin])
@@ -81,7 +82,8 @@ class UserViewSet(BaseUserViewSet):
                     recipes_limit=query_params.get('recipes_limit', None),
                 )
 
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadySubscribed()
         else:
@@ -157,13 +159,13 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer # см. get_serializer_class
+    serializer_class = RecipeSerializer  # см. get_serializer_class
     pagination_class = PageLimitPagination
     http_method_names = ['get', 'post', 'patch', 'delete', 'head']
 
     def partial_update(self, request, *args, **kwargs):
-        # Отключим свойство partial. Вместо этого будем вручную подбирать, какие
-        # поля должны быть необязательными
+        # Отключим свойство partial. Вместо этого будем вручную подбирать,
+        # какие поля должны быть необязательными
         # kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
@@ -191,7 +193,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 query = query.filter(favorited__user=self.request.user)
             else:
                 return []
-        elif is_favorited == False:
+        # is_favorited может быть None
+        elif is_favorited == False:  # noqa: E712
             if self.request.user.is_authenticated:
                 query = query.filter(~Q(favorited__user=self.request.user))
 
@@ -201,7 +204,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 query = query.filter(recipe_carts__user=self.request.user)
             else:
                 return []
-        elif is_in_shopping_cart == False:
+        # is_in_shopping_cart может быть None
+        elif is_in_shopping_cart == False:  # noqa: E712
             if self.request.user.is_authenticated:
                 query = query.filter(~Q(recipe_carts__user=self.request.user))
 
@@ -286,7 +290,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, url_path='get-link')
     def get_link(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
+        get_object_or_404(Recipe, pk=pk)
         short_link = ShortLink.objects.update_or_create(
             destination=f'/recipes/{pk}')
         return Response(ShortLinkSerializer(short_link).data)
@@ -295,4 +299,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
 class ShortLinkRedirect(APIView):
     def get(self, request, id=None):
         short_link = get_object_or_404(ShortLink, pk=id)
-        return HttpResponseRedirect(redirect_to='https://foodgram.example.org' + short_link.destination)
+        destination = urljoin(self.request.get_host(), short_link.destination)
+        return HttpResponseRedirect(redirect_to=destination)

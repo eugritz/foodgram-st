@@ -6,7 +6,6 @@ from import_export.admin import ImportExportModelAdmin
 from .models import (
     Favorite,
     Ingredient,
-    Ingredient,
     Recipe,
     RecipeIngredient,
     ShoppingCart,
@@ -38,12 +37,9 @@ class SubscriptionAdmin(BaseModelAdmin):
 
 @admin.display(description='Author')
 def author(obj):
-    return f'{obj.author.email} ({obj.author.first_name} {obj.author.last_name})'
-
-
-@admin.display(description='Author')
-def author(obj):
-    return 'test'
+    return (
+        f'{obj.author.email} ({obj.author.first_name} {obj.author.last_name})'
+    )
 
 
 @admin.display(description='Favorites count')
