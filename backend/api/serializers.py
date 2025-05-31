@@ -212,3 +212,15 @@ class UserSubscribeQuerySerializer(serializers.Serializer):
 class UserSubscriptionsQuerySerializer(serializers.Serializer):
     limit = serializers.IntegerField(required=False, min_value=0)
     recipes_limit = serializers.IntegerField(required=False, min_value=0)
+
+
+class RecipesQuerySerializer(serializers.Serializer):
+    is_favorited = serializers.BooleanField(
+        required=False,
+        allow_null=True
+    )
+    is_in_shopping_cart = serializers.BooleanField(
+        required=False,
+        allow_null=True
+    )
+    author = serializers.IntegerField(required=False)

@@ -40,6 +40,7 @@ from .serializers import (
     PartialUpdateRecipeSerializer,
     RecipeMinifiedSerializer,
     RecipeSerializer,
+    RecipesQuerySerializer,
     ShortLinkSerializer,
     UserSubscribeQuerySerializer,
     UserSubscriptionsQuerySerializer,
@@ -179,29 +180,34 @@ class RecipeViewSet(viewsets.ModelViewSet):
         # фильтрацию надо делать вручную
         #
 
-        is_favorited = self.request.query_params.get('is_favorited', '')
-        if is_favorited == '1':
-            query = query.filter(favorited__user=self.request.user)
-        elif is_favorited == '0':
-            query = query.filter(~Q(favorited__user=self.request.user))
-        elif is_favorited != '':
-            return []
-        
-        is_in_shopping_cart = self.request.query_params.get(
-            'is_in_shopping_cart', '')
-        if is_in_shopping_cart == '1':
-            query = query.filter(recipe_carts__user=self.request.user)
-        elif is_in_shopping_cart == '0':
-            query = query.filter(~Q(recipe_carts__user=self.request.user))
-        elif is_in_shopping_cart != '':
-            return []
-        
-        author = self.request.query_params.get('author', '')
-        try:
-            if author != '':
-                query = query.filter(author__pk=author)
-        except ValueError:
-            return []
+        query_params_serializer = RecipesQuerySerializer(
+            data=self.request.query_params)
+        query_params_serializer.is_valid(raise_exception=True)
+        query_params = query_params_serializer.validated_data
+
+        is_favorited = query_params.get('is_favorited', None)
+        if is_favorited:
+            if self.request.user.is_authenticated:
+                query = query.filter(favorited__user=self.request.user)
+            else:
+                return []
+        elif is_favorited == False:
+            if self.request.user.is_authenticated:
+                query = query.filter(~Q(favorited__user=self.request.user))
+
+        is_in_shopping_cart = query_params.get('is_in_shopping_cart', None)
+        if is_in_shopping_cart:
+            if self.request.user.is_authenticated:
+                query = query.filter(recipe_carts__user=self.request.user)
+            else:
+                return []
+        elif is_in_shopping_cart == False:
+            if self.request.user.is_authenticated:
+                query = query.filter(~Q(recipe_carts__user=self.request.user))
+
+        author = query_params.get('author', None)
+        if author is not None:
+            query = query.filter(author__pk=author)
 
         return query
 
