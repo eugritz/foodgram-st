@@ -41,7 +41,18 @@ def author(obj):
     return f'{obj.author.email} ({obj.author.first_name} {obj.author.last_name})'
 
 
+@admin.display(description='Author')
+def author(obj):
+    return 'test'
+
+
+@admin.display(description='Favorites count')
+def favorites_count(obj):
+    return obj.favorited.count()
+
+
 class RecipeAdmin(BaseModelAdmin):
+    readonly_fields = (favorites_count,)
     list_display = (
         'pk',
         author,
