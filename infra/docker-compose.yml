@@ -1,13 +1,18 @@
 version: '3.3'
 services:
-
+  backend:
+    container_name: foodgram-backend
+    build: ../backend
+    expose:
+     - "8000"
+    volumes:
+      - ./media/:/app/media/
+    restart: on-failure
   frontend:
     container_name: foodgram-front
     build: ../frontend
     volumes:
       - ../frontend/:/app/result_build/
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
   nginx:
     container_name: foodgram-proxy
     image: nginx:1.25.4-alpine
@@ -17,3 +22,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
+      - ./media/:/app/media/
+    depends_on:
+      - backend
+      - frontend
