@@ -40,7 +40,8 @@ from .serializers import (
     RecipeMinifiedSerializer,
     RecipeSerializer,
     ShortLinkSerializer,
-    UserSerializer,
+    UserSubscribeQuerySerializer,
+    UserSubscriptionsQuerySerializer,
     UserWithRecipesSerializer,
 )
 from .shopping_cart_generator import ShoppingCartGenerator
@@ -62,13 +63,21 @@ class UserViewSet(BaseUserViewSet):
         subscribe_to = get_object_or_404(User, pk=id)
 
         if request.method == 'POST':
+            query_params_serializer = UserSubscribeQuerySerializer(
+                data=request.query_params)
+            query_params_serializer.is_valid(raise_exception=True)
+            query_params = query_params_serializer.validated_data
+
             try:
                 subscription = Subscription.objects.create(
                     user=request.user, subscribed_to=subscribe_to)
-                return Response(
-                    UserWithRecipesSerializer(subscription.subscribed_to).data,
-                    status=status.HTTP_201_CREATED
+
+                serializer = UserWithRecipesSerializer(
+                    subscription.subscribed_to,
+                    recipes_limit=query_params.get('recipes_limit', None),
                 )
+
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadySubscribed()
         else:
@@ -107,11 +116,28 @@ class CurrentUserViewSet(viewsets.ViewSet):
 class SubscriptionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     pagination_class = PageLimitPagination
     permission_classes = (IsCurrentUser,)
-    serializer_class = UserSerializer
+    serializer_class = UserWithRecipesSerializer
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+
+        query_params_serializer = UserSubscriptionsQuerySerializer(
+            data=self.request.query_params)
+        query_params_serializer.is_valid(raise_exception=True)
+
+        self.limit = query_params_serializer.validated_data.get('limit', None)
+        self.recipes_limit = query_params_serializer.validated_data.get(
+            'recipes_limit', None)
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['recipes_limit'] = self.recipes_limit
+        serializer = super().get_serializer(*args, **kwargs)
+        return serializer
 
     def get_queryset(self):
-        return [x.subscribed_to for x in
-                self.request.user.subscriptions.select_related('subscribed_to')]
+        subscriptions = self.request.user.subscriptions.select_related(
+            'subscribed_to')[:self.limit]
+        return [x.subscribed_to for x in subscriptions]
 
 
 class NameSearchFilter(filters.SearchFilter):

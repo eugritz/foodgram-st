@@ -167,11 +167,21 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
 
 
 class UserWithRecipesSerializer(UserSerializer):
-    recipes = RecipeMinifiedSerializer(many=True)
+    recipes_limit: int | None = None
+
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def __init__(self, *args, **kwargs):
+        self.recipes_limit = kwargs.pop('recipes_limit', None)
+        super().__init__(*args, **kwargs)
+
+    def get_recipes(self, obj: User):
+        recipes = obj.recipes.all().order_by('id')[:self.recipes_limit]
+        return RecipeMinifiedSerializer(recipes, many=True).data
 
     def get_recipes_count(self, obj: User):
         return obj.recipes.count()
@@ -193,3 +203,12 @@ class ShortLinkSerializer(serializers.ModelSerializer):
     def get_short_link(self, obj: ShortLink):
         short_link = obj[0].short_link
         return reverse('short-link-redirect', args=(short_link,))
+
+
+class UserSubscribeQuerySerializer(serializers.Serializer):
+    recipes_limit = serializers.IntegerField(required=False, min_value=0)
+
+
+class UserSubscriptionsQuerySerializer(serializers.Serializer):
+    limit = serializers.IntegerField(required=False, min_value=0)
+    recipes_limit = serializers.IntegerField(required=False, min_value=0)
