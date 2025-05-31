@@ -23,7 +23,7 @@ services:
       DB_HOST: foodgram-db
       DB_PASSWORD: example
     volumes:
-      - ./static/:/app/static/
+      - static:/app/build/
       - ./media/:/app/media/
     depends_on:
       postgres:
@@ -33,7 +33,7 @@ services:
     container_name: foodgram-front
     build: ../frontend
     volumes:
-      - ../frontend/:/app/result_build/
+      - static:/app/result_build/build/
 
   nginx:
     container_name: foodgram-proxy
@@ -42,10 +42,12 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../frontend/build:/usr/share/nginx/html/
+      - static:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
-      - ./static/:/app/static/
       - ./media/:/app/media/
     depends_on:
       - backend
       - frontend
+
+volumes:
+  static:
