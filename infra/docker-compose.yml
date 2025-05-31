@@ -23,6 +23,7 @@ services:
       DB_HOST: foodgram-db
       DB_PASSWORD: example
     volumes:
+      - ./static/:/app/static/
       - ./media/:/app/media/
     depends_on:
       postgres:
@@ -43,6 +44,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
+      - ./static/:/app/static/
       - ./media/:/app/media/
     depends_on:
       - backend
