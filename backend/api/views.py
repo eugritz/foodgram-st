@@ -30,6 +30,7 @@ from .exceptions import (
     NotFavorited,
     NotInShoppingCart,
     NotSubscribed,
+    SelfSubscribe,
 )
 from .pagination import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly, IsCurrentUser
@@ -61,6 +62,8 @@ class UserViewSet(BaseUserViewSet):
             permission_classes=[CurrentUserOrAdmin])
     def subscribe(self, request, id=None):
         subscribe_to = get_object_or_404(User, pk=id)
+        if request.user == subscribe_to:
+            raise SelfSubscribe()
 
         if request.method == 'POST':
             query_params_serializer = UserSubscribeQuerySerializer(

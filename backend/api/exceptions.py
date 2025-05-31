@@ -13,6 +13,12 @@ class NotSubscribed(APIException):
     default_code = 'not_subscribed'
 
 
+class SelfSubscribe(APIException):
+    status_code = 400
+    default_detail = 'You can\'t subscribe or unsubscribe from yourself.'
+    default_code = 'self_subscribed'
+
+
 class AlreadyFavorited(APIException):
     status_code = 400
     default_detail = 'You have already favorited this recipe.'
