@@ -22,9 +22,10 @@ jobs:
 
       - name: Start Docker Compose services
         run: |
-          DEBUG=1 docker compose up -d
+          docker compose up -d
 
       - name: Run collections
         uses: matt-ball/newman-action@master
         with:
           collection: ./postman_collection/foodgram.postman_collection.json
+          environment: ./postman_collection/postman_environment.json
