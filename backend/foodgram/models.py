@@ -42,6 +42,9 @@ class Ingredient(models.Model):
     name = models.TextField(max_length=128)
     measurement_unit = models.TextField(max_length=64)
 
+    def __str__(self):
+        return f'{self.name} ({self.measurement_unit})'
+
 
 class Recipe(models.Model):
     author = models.ForeignKey(
@@ -63,6 +66,9 @@ class Recipe(models.Model):
 
     class Meta:
         ordering = ('-created_at',)
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
