@@ -59,6 +59,10 @@ class Recipe(models.Model):
     cooking_time = models.PositiveIntegerField(validators=[
         validators.MinValueValidator(1)
     ])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
 
 
 class RecipeIngredient(models.Model):
