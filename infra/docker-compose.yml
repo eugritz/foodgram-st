@@ -1,18 +1,39 @@
 version: '3.3'
 services:
+  postgres:
+    container_name: foodgram-db
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      PGUSER: postgres
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     container_name: foodgram-backend
     build: ../backend
+    restart: on-failure
     expose:
      - "8000"
+    environment:
+      DB_HOST: foodgram-db
+      DB_PASSWORD: example
     volumes:
       - ./media/:/app/media/
-    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   frontend:
     container_name: foodgram-front
     build: ../frontend
     volumes:
       - ../frontend/:/app/result_build/
+
   nginx:
     container_name: foodgram-proxy
     image: nginx:1.25.4-alpine

@@ -21,10 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-obkqmkuk6*y$cc@p#z%bb&6a0++_(8$cvjz+)zj-vv8iqjx4$1'
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-obkqmkuk6*y$cc@p#z%bb&6a0++_(8$cvjz+)zj-vv8iqjx4$1',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(os.getenv('DEBUG', False))
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -81,10 +84,21 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        'NAME': os.getenv('DB_NAME', os.getenv('DB_USER', 'postgres')),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
