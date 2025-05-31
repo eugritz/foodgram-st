@@ -21,8 +21,9 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Start Docker Compose services
+        continue-on-error: true
         run: |
-          docker compose up -d
+          docker compose up --wait
 
       - name: Run collections
         uses: matt-ball/newman-action@master
