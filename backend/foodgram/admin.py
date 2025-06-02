@@ -24,14 +24,14 @@ class BaseModelAdmin(admin.ModelAdmin):
 
 
 class IngredientAdmin(ImportExportModelAdmin):
-    list_display = ('pk', 'name', 'measurement_unit')
+    list_display = ('pk', 'name', 'measurement_unit', 'created_at')
     search_fields = ('name',)
     empty_value_display = '-пусто-'
     resource_classes = [IngredientResource]
 
 
 class SubscriptionAdmin(BaseModelAdmin):
-    list_display = ('pk', 'user', 'subscribed_to')
+    list_display = ('pk', 'user', 'subscribed_to', 'created_at')
     search_fields = ('user__email', 'subscribed_to__email')
 
 
@@ -67,17 +67,17 @@ class RecipeAdmin(BaseModelAdmin):
 
 
 class RecipeIngredientAdmin(BaseModelAdmin):
-    list_display = ('pk', 'recipe', 'ingredient', 'amount')
+    list_display = ('pk', 'recipe', 'ingredient', 'amount', 'created_at')
     search_fields = ('recipe__name', 'ingredient__name')
 
 
 class FavoriteAdmin(BaseModelAdmin):
-    list_display = ('pk', 'user', 'recipe')
+    list_display = ('pk', 'user', 'recipe', 'created_at')
     search_fields = ('user__email', 'recipe__name')
 
 
 class ShoppingCartAdmin(BaseModelAdmin):
-    list_display = ('pk', 'user', 'recipe')
+    list_display = ('pk', 'user', 'recipe', 'created_at')
     search_fields = ('user__email', 'recipe__name')
 
 
