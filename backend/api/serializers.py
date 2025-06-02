@@ -139,10 +139,22 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, value):
         seen = set()
-        if any(x['ingredient'].id in seen or seen.add(x['ingredient'].id)
-               for x in value):
-            raise serializers.ValidationError(
-                'This list may not contain duplicate items.')
+
+        # Замечание к замечанию ревьюера: это не list comprehension, а
+        # generator expression, что эквивалентно обычному for
+
+        # if any(x['ingredient'].id in seen or seen.add(x['ingredient'].id)
+        #        for x in value):
+        #     raise serializers.ValidationError(
+        #         'This list may not contain duplicate items.')
+
+        for ingredient_data in value:
+            id = ingredient_data['ingredient'].id
+            if id in seen:
+                raise serializers.ValidationError(
+                    'This list may not contain duplicate items.')
+            else:
+                seen.add(id)
         return value
 
 
