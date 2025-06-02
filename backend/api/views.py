@@ -1,5 +1,6 @@
 from django.db import IntegrityError
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from djoser.permissions import CurrentUserOrAdmin
@@ -24,6 +25,7 @@ from foodgram.models import (
     User,
 )
 
+from . import shopping_cart_generator
 from .exceptions import (
     AlreadyFavorited,
     AlreadyInShoppingCart,
@@ -47,7 +49,6 @@ from .serializers import (
     UserSubscriptionsQuerySerializer,
     UserWithRecipesSerializer,
 )
-from .shopping_cart_generator import ShoppingCartGenerator
 
 
 class UserViewSet(BaseUserViewSet):
@@ -273,10 +274,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request.user.user_carts.filter()
             .select_related('recipe')
             .prefetch_related('recipe__ingredients__ingredient')
+            # Не работает как хотелось бы
+            # .prefetch_related(Prefetch(
+            #     'recipe__ingredients__ingredient',
+            #     queryset=Ingredient.objects.order_by(Lower('name')),
+            # ))
+            .order_by(Lower('recipe__name'))
         )
 
-        recipes = [x.recipe for x in cart]
-        gen = ShoppingCartGenerator(recipes)
+        recipes = [shopping_cart_generator.Recipe(x.recipe) for x in cart]
+        gen = shopping_cart_generator.ShoppingCartGenerator(recipes)
         return HttpResponse(
             str(gen),
             content_type='text/plain',

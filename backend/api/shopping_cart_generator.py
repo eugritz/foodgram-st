@@ -1,9 +1,10 @@
 from foodgram.models import (
     Ingredient,
-    Recipe,
+    Recipe as RecipeModel,
     RecipeIngredient as RecipeIngredientModel,
 )
 from functools import lru_cache
+from typing import Iterable
 
 
 class RecipeIngredient:
@@ -15,8 +16,20 @@ class RecipeIngredient:
         self.amount = model.amount
 
 
-class ShoppingCartGenerator():
-    def __init__(self, recipes: Recipe):
+class Recipe:
+    name: str
+    ingredients: Iterable[RecipeIngredient]
+
+    def __init__(self, model: RecipeModel):
+        self.name = model.name
+        self.ingredients = sorted(
+            (RecipeIngredient(x) for x in model.ingredients.all()),
+            key=lambda x: x.ingredient.name.lower(),
+        )
+
+
+class ShoppingCartGenerator:
+    def __init__(self, recipes: Iterable[Recipe]):
         self.recipes = recipes
 
     def render_ingredient(self, ingredient: RecipeIngredient):
@@ -35,33 +48,38 @@ class ShoppingCartGenerator():
         recipes_list_render = ''
 
         for recipe in self.recipes:
-            ingredients = list(recipe.ingredients.all())
+            recipe_render = ''
 
-            if len(ingredients) > 0:
-                non_empty_recipes_count += 1
-                if recipes_contents_render != '':
-                    recipes_contents_render += '\n'
-                recipes_contents_render += (
-                    f'{non_empty_recipes_count}. {recipe.name}'
-                )
-                recipes_list_render += f'### {recipe.name}\n'
+            ingredient_count = 0
+            for ingredient in recipe.ingredients:
+                ingredient_count += 1
 
-            for ingredient in ingredients:
-                ingredient2 = RecipeIngredient(ingredient)
-                recipes_list_render += \
-                    self.render_ingredient(ingredient2) + '\n'
+                recipe_render += self.render_ingredient(ingredient) + '\n'
 
                 id = ingredient.ingredient.id
                 if id in ingredients_dict:
-                    ingredients_dict[id].amount += ingredient2.amount
+                    ingredients_dict[id].amount += ingredient.amount
                 else:
-                    ingredients_dict[id] = ingredient2
+                    ingredients_dict[id] = ingredient
 
-            recipes_list_render += '\n'
+            if ingredient_count == 0:
+                continue
+
+            non_empty_recipes_count += 1
+            if recipes_contents_render != '':
+                recipes_contents_render += '\n'
+            recipes_contents_render += (
+                f'{non_empty_recipes_count}. {recipe.name}'
+            )
+            recipe_render = f'### {recipe.name}\n' + recipe_render
+            recipes_list_render += recipe_render + '\n'
 
         ingredient_list_render = '\n'.join(map(
             self.render_ingredient,
-            sorted(ingredients_dict.values(), key=lambda x: x.ingredient.name)
+            sorted(
+                ingredients_dict.values(),
+                key=lambda x: x.ingredient.name.lower(),
+            ),
         ))
 
         if non_empty_recipes_count > 0:
@@ -69,13 +87,14 @@ class ShoppingCartGenerator():
             ingredient_list_render = ingredient_list_render + '\n'
             recipes_list_render = recipes_list_render + '\n'
 
-        render = f'''# Список покупок
-
-## Ингредиенты
-{ingredient_list_render}
-## Рецепты
-{recipes_contents_render}
-{recipes_list_render}
-'''
+        render = (
+            '# Список покупок\n'
+            '\n'
+            '## Ингредиенты\n'
+            f'{ingredient_list_render}\n'
+            '## Рецепты\n'
+            f'{recipes_contents_render}\n'
+            f'{recipes_list_render}\n'
+        )
 
         return render.rstrip() + '\n'
