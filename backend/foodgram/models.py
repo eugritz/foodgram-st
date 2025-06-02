@@ -5,6 +5,8 @@ from django.db import models
 import random
 import string
 
+from . import constants
+
 
 class AbstractBaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -73,8 +75,9 @@ class Recipe(AbstractBaseModel):
         default=None,
     )
     text = models.TextField()
-    cooking_time = models.PositiveIntegerField(validators=[
-        validators.MinValueValidator(1)
+    cooking_time = models.PositiveSmallIntegerField(validators=[
+        validators.MinValueValidator(constants.MIN_COOKING_TIME_VALUE),
+        validators.MaxValueValidator(constants.MAX_COOKING_TIME_VALUE),
     ])
 
     def __str__(self):
@@ -88,8 +91,9 @@ class RecipeIngredient(AbstractBaseModel):
         related_name='ingredients',
     )
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    amount = models.PositiveIntegerField(validators=[
-        validators.MinValueValidator(1)
+    amount = models.PositiveSmallIntegerField(validators=[
+        validators.MinValueValidator(constants.MIN_AMOUNT_VALUE),
+        validators.MaxValueValidator(constants.MAX_AMOUNT_VALUE),
     ])
 
 
