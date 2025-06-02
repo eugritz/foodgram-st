@@ -147,6 +147,13 @@ class SubscriptionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 class NameSearchFilter(filters.SearchFilter):
     search_param = 'name'
+    # Без этого тест get_ingredients_list_with_name_filter иногда валится, т.к.
+    # там проверка с учетом регистра
+    lookup_prefixes = filters.SearchFilter.lookup_prefixes | {
+        # NOTE: SQLite не поддерживает LIKE с учетом регистра;
+        # startswith для SQLite действует как istartswith
+        '^': 'startswith',
+    }
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
