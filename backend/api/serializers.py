@@ -123,31 +123,19 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
-        for ingredient_data in ingredients_data:
-            RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
-        return recipe
+        instance = Recipe.objects.create(**validated_data)
+        self.update_or_create(instance, ingredients_data)
+        return instance
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredients')
-        new_ingredients_dict = {x['ingredient'].id: x
-                                for x in ingredients_data}
-        old_ingredients_dict = {x.ingredient.id: x
-                                for x in instance.ingredients.all()}
-
-        # Удалим старые ингредиенты
-        for id, ingredient in old_ingredients_dict.items():
-            if id not in new_ingredients_dict:
-                ingredient.delete()
-
-        # Добавим новые, либо обновим старые
-        for ingredient_data in new_ingredients_dict.values():
-            RecipeIngredient.objects.update_or_create(
-                recipe=instance,
-                ingredient=ingredient_data['ingredient'],
-                defaults=ingredient_data)
-
+        instance.ingredients.all().delete()
+        self.update_or_create(instance, ingredients_data)
         return instance
+
+    def update_or_create(self, instance, ingredients_data):
+        RecipeIngredient.objects.bulk_create(
+            [RecipeIngredient(recipe=instance, **i) for i in ingredients_data])
 
     def validate_ingredients(self, value):
         seen = set()
