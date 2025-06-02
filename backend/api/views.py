@@ -87,13 +87,12 @@ class UserViewSet(BaseUserViewSet):
             except IntegrityError:
                 raise AlreadySubscribed()
         else:
-            subscription = Subscription.objects.filter(
-                user=request.user, subscribed_to=subscribe_to).first()
+            subscription = request.user.subscriptions.filter(
+                subscribed_to=subscribe_to).first()
             if subscription:
                 subscription.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                raise NotSubscribed()
+            raise NotSubscribed()
 
 
 class CurrentUserViewSet(viewsets.ViewSet):
@@ -103,8 +102,7 @@ class CurrentUserViewSet(viewsets.ViewSet):
     def avatar(self, request):
         if request.method == 'PUT':
             return self.set_avatar(request)
-        else:
-            return self.delete_avatar(request)
+        return self.delete_avatar(request)
 
     def set_avatar(self, request):
         serializer = AvatarSerializer(request.user, data=request.data)
@@ -239,14 +237,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                 status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadyFavorited()
-        else:
-            favorite = Favorite.objects.filter(user=request.user,
-                                               recipe=recipe).first()
-            if favorite:
-                favorite.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                raise NotFavorited()
+
+        # DELETE
+        favorite = request.user.favorites.filter(recipe=recipe).first()
+        if favorite:
+            favorite.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        raise NotFavorited()
 
     @action(['post', 'delete'],
             detail=True,
@@ -262,20 +259,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                 status=status.HTTP_201_CREATED)
             except IntegrityError:
                 raise AlreadyInShoppingCart()
-        else:
-            cart = ShoppingCart.objects.filter(user=request.user,
-                                               recipe=recipe).first()
-            if cart:
-                cart.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                raise NotInShoppingCart()
+
+        # DELETE
+        cart = request.user.user_carts.filter(recipe=recipe).first()
+        if cart:
+            cart.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        raise NotInShoppingCart()
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        cart = ShoppingCart.objects.filter(user=request.user) \
-            .select_related('recipe') \
+        cart = (
+            request.user.user_carts.filter()
+            .select_related('recipe')
             .prefetch_related('recipe__ingredients__ingredient')
+        )
 
         recipes = [x.recipe for x in cart]
         gen = ShoppingCartGenerator(recipes)
