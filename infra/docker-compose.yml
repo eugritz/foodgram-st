@@ -23,6 +23,8 @@ services:
     environment:
       DB_HOST: foodgram-db
       DB_PASSWORD: example
+      DEBUG: $FOODGRAM_DEBUG
+      TEST: $FOODGRAM_TEST
     volumes:
       - static:/app/build/
       - ./media/:/app/media/

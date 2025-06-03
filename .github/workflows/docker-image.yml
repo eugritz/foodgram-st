@@ -33,10 +33,10 @@ jobs:
       - name: Start Docker Compose services
         continue-on-error: true
         run: |
-          docker compose up --wait
+          FOODGRAM_TEST=1 docker compose up --wait
 
       - name: Run collections
         uses: matt-ball/newman-action@master
         with:
           collection: ./postman_collection/foodgram.postman_collection.json
-          environment: ./postman_collection/postman_environment.json
+          environment: ./postman_collection/test.postman_environment.json

@@ -6,6 +6,9 @@ import tablib
 
 
 def import_ingredients(apps, schema_editor):
+    if not bool(os.getenv('TEST', False)):
+        return
+
     Ingredient = apps.get_model('foodgram', 'Ingredient')
 
     base_dir = Path(__file__).resolve().parent.parent.parent
